@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="cucumber-examples.main" target="1.8" />
+      <module name="cucumber-examples.test" target="1.8" />
+      <module name="cucumber-junit4-example.main" target="1.8" />
+      <module name="cucumber-junit4-example.test" target="1.8" />
+      <module name="cucumber.main" target="1.8" />
+      <module name="cucumber.test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

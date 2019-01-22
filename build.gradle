@@ -1,0 +1,115 @@
+plugins {
+    //применяет java плагин. Создаёт конфигурации и настраиваем компилятор
+    //подробнее см тут https://docs.gradle.org/current/userguide/java_library_plugin.html
+    id 'java-library'
+}
+
+//репозитории из которых будут загружаться зависимости
+//обычно ставят публичные + первым свой корпоративный
+repositories {
+    jcenter()
+}
+
+//конфигурация нужна для формирования запуска cucumber-cli. Тут просто что совпадает с testImplementation.
+//для JUnit5 будет иначе. В целом неплохая практика выделять отдельные для запуска javaexec тасков
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+//блок с описанием зависимостей проекта
+dependencies {
+    /**
+     * Dependency Management
+     *
+     * Хорошим тонгом является объявить версии всех зависимостей в самом начале
+     * Тогда во всех подпроектах (в данном проекте отсутсвуют, но в целом лучше следовать)
+     * В данном проекте сами зависимости (см ниже, под constrainsts) будут указываться уже без версий. В подпроектах тоже
+     */
+    constraints {
+        compileOnly 'org.projectlombok:lombok:1.18.2'
+        annotationProcessor 'org.projectlombok:lombok:1.18.2'
+        testCompileOnly 'org.projectlombok:lombok:1.18.2'
+        testAnnotationProcessor 'org.projectlombok:lombok:1.18.2'
+
+        implementation 'com.google.guava:guava:26.0-jre',
+                'com.google.inject:guice:4.2.2'
+        testImplementation 'junit:junit:4.12',
+                'io.github.benas:random-beans:3.7.0',
+                'org.mockito:mockito-all:1.10.19',
+                'io.cucumber:cucumber-java:4.2.2',
+                'io.cucumber:cucumber-junit:4.2.2',
+                'io.cucumber:cucumber-guice:4.2.2',
+                'com.codeborne:selenide:5.1.0',
+                'ch.qos.logback:logback-classic:1.2.3'
+    }
+
+    /**
+     * Конфигурация annotation processor — Lombok
+     * Подробнее читай тут – https://projectlombok.org/
+     *
+     * Описание разные конфигураций и для чего они есть тут – https://docs.gradle.org/current/userguide/java_library_plugin.html#sec:java_library_configurations_graph
+     */
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    implementation 'com.google.guava:guava', //полезная библиотека со всякими утильными методами и вспомогательными классами
+            'com.google.inject:guice' //DI фреймворк для Java
+
+    testImplementation 'junit:junit', //фреймворк junit4
+            //для генерации рандом значений в тестах(например имена). Смотри доку тут https://github.com/benas/random-beans
+            'io.github.benas:random-beans',
+            //для мокирования. В основном используется для unit тестов, тут вероятно не шибко нужно
+            'org.mockito:mockito-all',
+            //чтобы при запуска обычных тестов cucumber запускался автоматически(нужно для интеграции с идеей)
+            'io.cucumber:cucumber-junit',
+            //для обеспечения Dependency Injection паттерна в тестах
+            'io.cucumber:cucumber-guice',
+            //API cucumber. Всякие аннотации типа @When/@Then/... там. Плюс реализации для Java
+            'io.cucumber:cucumber-java',
+            //обёртка над селеноидом
+            'com.codeborne:selenide',
+            //библиотека для логирования. См SLF4j API
+            'ch.qos.logback:logback-classic'
+}
+
+//региструруем таск для запуска наших сценариев через Cucumber (headless)
+tasks.register('cucumberFirstSuite') {
+    dependsOn assemble, compileTestJava //чтобы сначала скомпилировалось и собрались ресурсы перед запуском тестов
+    doLast {
+        javaexec {
+            //main класс cucumber cli
+            main = "cucumber.api.cli.Main"
+            //чтбы локальный запуск не врубал реальный chrome. Только в headless режиме
+            systemProperties = ['selenide.headless': 'true']
+            //java classpath со всеми зависимостями для запуска cucumber сценариев через cucumber-cli
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            //аргументы запуска для cucumber cli
+            args = ['--plugin', 'pretty', //просто плагины, этот чтобы красиво в консольке печаталось
+                    '--glue', 'ru.lavcraft.examples.cucumber.features', //в каких пакетах ищем имплементации шагов
+                    'src/test/resources'//в каких папках ищем сценарии с шагами для запуска
+            ]
+        }
+    }
+}
+
+//региструруем таск для запуска наших сценариев через Cucumber (headfull)
+tasks.register('cucumberFirstSuiteHeadfull') {
+    dependsOn assemble, compileTestJava //чтобы сначала скомпилировалось и собрались ресурсы перед запуском тестов
+    doLast {
+        javaexec {
+            //main класс cucumber cli
+            main = "cucumber.api.cli.Main"
+            //java classpath со всеми зависимостями для запуска cucumber сценариев через cucumber-cli
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            //аргументы запуска для cucumber cli
+            args = ['--plugin', 'pretty', //просто плагины, этот чтобы красиво в консольке печаталось
+                    '--glue', 'ru.lavcraft.examples.cucumber.features', //в каких пакетах ищем имплементации шагов
+                    'src/test/resources'//в каких папках ищем сценарии с шагами для запуска
+            ]
+        }
+    }
+}
